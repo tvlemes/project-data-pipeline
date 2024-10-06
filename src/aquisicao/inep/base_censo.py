@@ -3,36 +3,36 @@ import os
 import typing
 import urllib
 from bs4 import BeautifulSoup
-from src.aquisicao.base_etl import BaseETL
+from src.aquisicao.inep.base_inep import BaseINEPETL
 from src.utils.web import download_dados_web
+import zipfile
+import pandas as pd
 
-class BaseINEPETL(BaseETL, abc.ABC):
+class BaseCensoEscolarTETL(BaseINEPETL, abc.ABC):
     """
-    Classe que estrutura como qualquer objeto de ETL
-    deve funcionar para baixar dados do INEP
+    Classe que estrutura como qualquer objeto de ETL do Censo Escolar
+    deve funcionar para baixar dados do CensoEscola
     """
+    _tabela: str
 
-    URL: str = 'https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados'
-    _url: str
-    
     def __init__(
             self,
             entrada: str,
             saida: str,
-            base: str,
+            tabela: str,
             criar_caminho: bool = True,
     ) -> None:
         """
         Instância o objeto de ETL Base.
         :param entrada: String com caminho para pasta de entrada.
         :param saida: String com caminho para pasta de saída.
-        :param base: Nome da base que vai na URL do INEP
+        :param tabela: Tabela do censo escolar a ser processada.
         :param criar_caminho: Flag indicando se devemos criar os caminhos.
         """
 
-        super().__init__(entrada, saida, criar_caminho)
+        super().__init__(entrada, saida, "censo-escolar", criar_caminho)
 
-        self._url = f"{self.URL}/{base}"
+        self.tabela = tabela
 
     def le_pagina_inep(self) -> typing.Dict[str, str]:
         """
@@ -69,13 +69,20 @@ class BaseINEPETL(BaseETL, abc.ABC):
             download_dados_web(caminho_arq, link)
 
 
-    @abc.abstractmethod
     def extract(self) -> None:
         """
         Extraí os dados do objeto.
         """
-        pass
+        # Realiza o download dos dados do Censo Escolar
+        self.download_conteudo()
 
+        # Carrega as tabelas de interesse
+        for arq in self.le_pagina_inep():
+            with zipfile.ZipFile(arq) as arq_zip:
+                nome_zip = [arq for arq in arq_zip.namelist() if self._tabela in arq]
+                self._dados_entrada[arq] = pd.read_cs(
+                    arq_zip.open(nome_zip), encoding="latin-1", sep='|'
+                )
     @abc.abstractmethod
     def transform(self) -> None:
         """
