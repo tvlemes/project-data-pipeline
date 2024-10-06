@@ -1,7 +1,7 @@
 import click
 from src.aquisicao.opcoes import EnumETL
 from src.aquisicao.opcoes import ETL_DICT
-import utils.configs as conf_geral
+import src.utils.configs as conf_geral
 
 @click.group()
 def cli():

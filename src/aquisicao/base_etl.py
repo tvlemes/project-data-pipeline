@@ -1,6 +1,5 @@
 import abc # cria a estrutura base para ETL
 import logging
-import os
 import typing
 from pathlib import Path
 
