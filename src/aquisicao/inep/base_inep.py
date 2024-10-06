@@ -1,4 +1,4 @@
-import abc  # cria a estrutura base para ETL
+import abc 
 import os
 import typing
 import urllib
@@ -12,7 +12,7 @@ class BaseINEPETL(BaseETL, abc.ABC):
     deve funcionar para baixar dados do INEP
     """
 
-    URL = str = "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-escolar"
+    URL: str = 'https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados'
 
     def __init__(
             self,
@@ -31,27 +31,20 @@ class BaseINEPETL(BaseETL, abc.ABC):
         """
 
         super().__init__(entrada, saida, criar_caminho)
+
         self._url = f"{self.URL}/{base}"
 
     def le_pagina_inep(self) -> typing.Dict[str, str]:
         """
         Realiza o Web-Scraping da página INEP.
 
-        :return: No do aquivo e link para a página
+        :return: Nome do aquivo e link para a página
         """
         html = urllib.request.urlopen(self._url).read()
+
         soup = BeautifulSoup(html, features='html.parser')
 
-        # Criando um dicionário com o nome das URL´s para download
-        #####################################################################################################
-        # Capturando a class no arquivo HTML cujo nome é external-link 
-        # tags = soup.find_all("a", {"class":"external-link"})
-        # tag = tags[0]
-        # print(tag['href'])
-
-        # Outra forma: {'2023.zip': 'https://download.inep.gov.br/dados_abertos/microdados_censo_escolar_2023.zip', 
-        #               '2022.zip': 'https://download.inep.gov.br/dados_abertos/microdados_censo_escolar_2022.zip'...}
-        links = {tag['href'].split("_")[-1]: tag['href'] for tag in soup.find_all("a", {"class":"external-link"})}
+        return {tag['href'].split("_")[-1]: tag['href'] for tag in soup.find_all("a", {"class":"external-link"})}
 
     def dicionario_para_baixar(self) -> typing.Dict[str, str]:
 
@@ -90,17 +83,17 @@ class BaseINEPETL(BaseETL, abc.ABC):
         """
         pass
 
-    def load(self) -> None:
-        """
-        Exporta os dados transformados.
-        """
-        for arq, df in self.dados_saida.items():
-            df.to_parquet(self.caminho_saida / arq, index=False)
+    # def load(self) -> None:
+    #     """
+    #     Exporta os dados transformados.
+    #     """
+    #     for arq, df in self.dados_saida.items():
+    #         df.to_parquet(self.caminho_saida / arq, index=False)
 
-    def pipeline(self) -> None:
-        """
-        Executa o pipeline completo de tratamento de dados.
-        """
-        self.extract()
-        self.transform()
-        self.load()
+    # def pipeline(self) -> None:
+    #     """
+    #     Executa o pipeline completo de tratamento de dados.
+    #     """
+    #     self.extract()
+    #     self.transform()
+    #     self.load()
